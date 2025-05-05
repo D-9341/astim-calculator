@@ -1,0 +1,5 @@
+dist
+build
+vars.env
+main.spec
+__pycache__
