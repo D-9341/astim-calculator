@@ -1,14 +1,6 @@
 import os
 import tkinter as tk
 import tkinter.ttk as ttk
-from pathlib import Path
-from dotenv import load_dotenv
-import psycopg2
-
-CWD = Path(__file__).parents[0]
-CWD = str(CWD)
-load_dotenv(CWD + '\\vars.env')
-PASSWORD = os.getenv('DB_PASS')
 
 class Label(ttk.Label):
     def __init__(self, root, text, font = None, foreground = 'black'):
@@ -217,7 +209,7 @@ _60MM_MAP = {
 }
 
 root = tk.Tk()
-root.geometry('500x900')
+root.geometry('500x800')
 root.title('Калькулятор')
 
 diam_label = Label(root, text = 'Введите диаметр трубы')
@@ -245,37 +237,24 @@ tonnage = 0
 price = 0
 
 def calculate():
-    """
-    Calculate the total tonnage, price and length of astim based on input diam, length and thickness.
-    Also calculate the total tonnage, price and length of all input.
-    If some data is not entered, display error message and return.
-    If the entered data is incorrect, display error message and return.
-    If the operation is not supported, display error message and return.
-    """
     global total_length, tonnage, price
     try:
         diam = int(diam_entry.get())
         if diam not in DIAM_MAP.keys():
             diam_label.config(text = 'Такого диаметра нет', foreground = 'red')
-            root.after(2000, lambda: diam_label.config(text = 'Введите диаметр трубы', foreground = 'black'))
-            return
+            root.after(2000, lambda: diam_label.config(text = 'Введите диаметр трубы', foreground = 'black')); return
         if '*' in length_entry.get() or '-' in length_entry.get() or '/' in length_entry.get():
-            if '*' in length_entry.get():
-                operation = 'умножение'
-            elif '-' in length_entry.get():
-                operation = 'вычитание'
-            elif '/' in length_entry.get():
-                operation = 'деление'
+            if '*' in length_entry.get(): operation = 'умножение'
+            elif '-' in length_entry.get(): operation = 'вычитание'
+            elif '/' in length_entry.get(): operation = 'деление'
             length_label.config(text = f'Неподдерживаемая операция: {operation}', foreground = 'red')
-            root.after(2000, lambda: length_label.config(text = 'Введите длину / длины труб (через +)', foreground = 'black'))
-            return
+            root.after(2000, lambda: length_label.config(text = 'Введите длину / длины труб (через +)', foreground = 'black')); return
         lengths = list(map(float, length_entry.get().split('+')))
         length = sum(lengths)
         thickness = thickness_entry.get()
         if thickness not in ['15', '20', '25', '30', '35', '40', '50', '60']:
             thickness_label.config(text = 'Такой толщины нет', foreground = 'red')
-            root.after(2000, lambda: thickness_label.config(text = 'Введите толщину изоляции', foreground = 'black'))
-            return
+            root.after(2000, lambda: thickness_label.config(text = 'Введите толщину изоляции', foreground = 'black')); return
         astim_price = int(astim_price_entry.get() or 595)
         match thickness:
             case '15':
@@ -298,15 +277,10 @@ def calculate():
         tonnage += astim_tonnage
         price += astim_tonnage * astim_price
         total_length += length
-        result_label.config(text = f'Тоннаж астима: {astim_tonnage} кг \
-                            \nСтоимость: {astim_tonnage * astim_price} руб \
-                            \nПлощадь трубы: {msqr} м^2\n\nОбщий тоннаж: {tonnage} кг\
-                            \nОбщая стоимость: {price} руб\nОбщая длина: {total_length} м \
-                            \nГидротэк: {round(total_length * 0.8, 1)} кг \
-                            \nТоннаж клея: {round(tonnage * 0.1, 1)} кг')
-        write_to_database_button.config(state = 'enabled')
-        write_to_database_label.config(text = 'Название камеры')
-        write_to_database_entry.config(state = 'enabled')
+        result_label.config(text = f'Тоннаж астима: {astim_tonnage} кг\nСтоимость: {astim_tonnage * astim_price} руб\nПлощадь трубы: {msqr} м^2\n\nОбщий тоннаж: {tonnage} кг\nОбщая стоимость: {price} руб\nОбщая длина: {total_length} м\nГидротэк: {round(total_length * 0.8, 1)} кг\nТоннаж клея: {round(tonnage * 0.1, 1)} кг')
+        write_to_file_button.config(state = 'enabled')
+        write_to_file_label.config(text = 'Название камеры')
+        write_to_file_entry.config(state = 'enabled')
     except Exception:
         result_label.config(text = 'Некоторые данные не были введены', foreground = 'red')
         root.after(2000, lambda: result_label.config(text = '', foreground = 'black'))
@@ -316,17 +290,12 @@ result_label = Label(root, text = '', font = 'Arial 15')
 result_label.pack(pady = 10)
 
 def clear_memory():
-    """
-    Resets all variables to their initial values, clears all input fields and 
-    labels, and disables the 'Записать в базу данных' button.
-    """
     global tonnage, price, total_length
     tonnage = price = total_length = 0
     result_label.config(text = '')
-    write_to_database_button.config(state = 'disabled')
-    write_to_database_label.config(text = '')
-    write_to_database_entry.config(state = 'disabled')
-    write_to_database_entry.delete(0, tk.END)
+    write_to_file_button.config(state = 'disabled')
+    write_to_file_label.config(text = '')
+    write_to_file_entry.config(state = 'disabled')
     diam_entry.delete(0, tk.END)
     length_entry.delete(0, tk.END)
     thickness_entry.delete(0, tk.END)
@@ -334,97 +303,15 @@ def clear_memory():
 
 Button(root, text = 'Очистить память', command = clear_memory).pack(pady = 10)
 
-def write_to_database(tonnage, price, total_length, name):
-    """
-    Writes the calculated results to the database.
+def write_to_file(tonnage, price, total_length, name):
+    with open('result.txt', 'a' if os.path.exists('result.txt') else 'x', encoding = 'utf-8') as f:
+        f.write(f'{name}\n\nОбщий тоннаж: {tonnage} кг\nОбщая стоимость: {price} руб\nОбщая длина: {total_length} м\nГидротэк: {round(total_length * 0.8, 1)} кг\nТоннаж клея: {round(tonnage * 0.1, 1)} кг\n\n')
 
-    Inserts a new record into the 'results' table with the provided name, 
-    total tonnage, total price, total length, hydrotec, and glue tonnage. 
-    After inserting, it retrieves the generated ID of the new record and 
-    updates the result label with a confirmation message.
-
-    Parameters
-    ----------
-    tonnage: float
-        The total tonnage of astim.
-    price: float
-        The total price of astim.
-    total_length: float
-        The total length of the pipes.
-    name: str
-        The name of the record to be inserted.
-    """
-
-    conn = psycopg2.connect(host = 'localhost', database = 'astim', user = 'postgres', password = PASSWORD, port = 5432)
-    cur = conn.cursor()
-    cur.execute("INSERT INTO results (name, total_tonnage, total_price, total_length, hydrotec, glue_tonnage) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-                (name, tonnage, price, total_length, round(total_length * 0.8, 1), round(tonnage * 0.1, 1)))
-    conn.commit()
-    result = cur.fetchone()[0]
-    result_label.config(text = f'Запись с ID {result} добавлена')
-
-def remove_from_database(id):
-    """
-    Removes a record from the database.
-
-    Deletes a record from the 'results' table with the specified ID.
-
-    Parameters
-    ----------
-    id: int
-        The ID of the record to be deleted.
-    """
-
-    conn = psycopg2.connect(host = 'localhost', database = 'astim', user = 'postgres', password = PASSWORD, port = 5432)
-    cur = conn.cursor()
-    cur.execute("DELETE FROM results WHERE id = %s", (id))
-    conn.commit()
-
-def get_from_database(id):
-    """
-    Retrieves a record from the database by its ID.
-
-    Given a record ID, queries the 'results' table and updates the result label with the values of the record.
-    If a record with the given ID does not exist, the result label is updated with an error message.
-
-    Parameters
-    ----------
-    id: int
-        The ID of the record to be retrieved.
-    """
-    conn = psycopg2.connect(host = 'localhost', database = 'astim', user = 'postgres', password = PASSWORD, port = 5432)
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM results WHERE id = %s", (id))
-    result = cur.fetchone()
-    try:
-        result_label.config(text = f'Название камеры: {result[1]}\n \
-                            Общий тоннаж астима: {result[2]} кг\n \
-                            Общая стоимость: {result[3]} руб\n \
-                            Общая длина: {result[4]} м\n \
-                            Гидротэк: {result[5]} кг\n \
-                            Тоннаж клея: {result[6]} кг', foreground = 'black')
-    except Exception:
-        result_label.config(text = 'Записи с данным ID не существует', foreground = 'red')
-
-write_to_database_label = Label(root, text = '')
-write_to_database_label.pack(pady = 10)
-write_to_database_entry = ttk.Entry(root, state = 'disabled')
-write_to_database_entry.pack(pady = 10)
-write_to_database_button = Button(root, text = 'Записать в базу данных', command = lambda: write_to_database(tonnage, price, total_length, write_to_database_entry.get()), state = 'disabled')
-write_to_database_button.pack(pady = 10)
-
-get_from_database_label = Label(root, text = 'Введите ID записи для её просмотра')
-get_from_database_label.pack(pady = 10)
-get_from_database_entry = ttk.Entry(root)
-get_from_database_entry.pack(pady = 10)
-get_from_database_button = Button(root, text = 'Посмотреть записанные данные', command = lambda: get_from_database(get_from_database_entry.get()))
-get_from_database_button.pack(pady = 10)
-
-remove_from_database_label = Label(root, text = 'Введите ID записи для удаления')
-remove_from_database_label.pack(pady = 10)
-remove_from_database_entry = ttk.Entry(root)
-remove_from_database_entry.pack(pady = 10)
-remove_from_database_button = Button(root, text = 'Удалить из базы данных', command = lambda: remove_from_database(remove_from_database_entry.get()))
-remove_from_database_button.pack(pady = 10)
+write_to_file_label = Label(root, text = '')
+write_to_file_label.pack(pady = 10)
+write_to_file_entry = ttk.Entry(root, state = 'disabled')
+write_to_file_entry.pack(pady = 10)
+write_to_file_button = Button(root, text = 'Записать в файл', command = lambda: write_to_file(tonnage, price, total_length, write_to_file_entry.get()), state = 'disabled')
+write_to_file_button.pack(pady = 10)
 
 root.mainloop()
