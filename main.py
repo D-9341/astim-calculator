@@ -10,6 +10,14 @@ CWD = str(CWD)
 load_dotenv(CWD + '\\vars.env')
 PASSWORD = os.getenv('DB_PASS')
 
+class Label(ttk.Label):
+    def __init__(self, root, text, font = None, foreground = 'black'):
+        super().__init__(root, text = text, font = font, foreground = foreground)
+
+class Button(ttk.Button):
+    def __init__(self, root, text, command, state = 'enabled'):
+        super().__init__(root, text = text, command = command, state = state)
+
 DIAM_MAP = {
     48: 0.15,
     57: 0.18,
@@ -212,22 +220,22 @@ root = tk.Tk()
 root.geometry('500x900')
 root.title('Калькулятор')
 
-diam_label = ttk.Label(root, text = 'Введите диаметр трубы')
+diam_label = Label(root, text = 'Введите диаметр трубы')
 diam_label.pack(pady = 10)
 diam_entry = ttk.Entry(root)
 diam_entry.pack(pady = 10)
 
-length_label = ttk.Label(root, text = 'Введите длину / длины труб (через +)')
+length_label = Label(root, text = 'Введите длину / длины труб (через +)')
 length_label.pack(pady = 10)
 length_entry = ttk.Entry(root)
 length_entry.pack(pady = 10)
 
-thickness_label = ttk.Label(root, text = 'Введите толщину изоляции')
+thickness_label = Label(root, text = 'Введите толщину изоляции')
 thickness_label.pack(pady = 10)
 thickness_entry = ttk.Entry(root)
 thickness_entry.pack(pady = 10)
 
-astim_price_label = ttk.Label(root, text = 'Введите цену астима или оставьте поле пустым')
+astim_price_label = Label(root, text = 'Введите цену астима или оставьте поле пустым')
 astim_price_label.pack(pady = 10)
 astim_price_entry = ttk.Entry(root)
 astim_price_entry.pack(pady = 10)
@@ -303,8 +311,8 @@ def calculate():
         result_label.config(text = 'Некоторые данные не были введены', foreground = 'red')
         root.after(2000, lambda: result_label.config(text = '', foreground = 'black'))
 
-ttk.Button(root, text = 'Рассчитать', command = calculate).pack(pady = 10)
-result_label = ttk.Label(root, text = '', font = 'Arial 15')
+Button(root, text = 'Рассчитать', command = calculate).pack(pady = 10)
+result_label = Label(root, text = '', font = 'Arial 15')
 result_label.pack(pady = 10)
 
 def clear_memory():
@@ -324,7 +332,7 @@ def clear_memory():
     thickness_entry.delete(0, tk.END)
     astim_price_entry.delete(0, tk.END)
 
-ttk.Button(root, text = 'Очистить память', command = clear_memory).pack(pady = 10)
+Button(root, text = 'Очистить память', command = clear_memory).pack(pady = 10)
 
 def write_to_database(tonnage, price, total_length, name):
     """
@@ -389,29 +397,34 @@ def get_from_database(id):
     cur.execute("SELECT * FROM results WHERE id = %s", (id))
     result = cur.fetchone()
     try:
-        result_label.config(text = f'Общий тоннаж астима: {result[2]} кг\nОбщая стоимость: {result[3]} руб\nОбщая длина: {result[4]} м\nГидротэк: {result[5]} кг\nТоннаж клея: {result[6]} кг', foreground = 'black')
+        result_label.config(text = f'Название камеры: {result[1]}\n \
+                            Общий тоннаж астима: {result[2]} кг\n \
+                            Общая стоимость: {result[3]} руб\n \
+                            Общая длина: {result[4]} м\n \
+                            Гидротэк: {result[5]} кг\n \
+                            Тоннаж клея: {result[6]} кг', foreground = 'black')
     except Exception:
         result_label.config(text = 'Записи с данным ID не существует', foreground = 'red')
 
-write_to_database_label = ttk.Label(root, text = '')
+write_to_database_label = Label(root, text = '')
 write_to_database_label.pack(pady = 10)
 write_to_database_entry = ttk.Entry(root, state = 'disabled')
 write_to_database_entry.pack(pady = 10)
-write_to_database_button = ttk.Button(root, text = 'Записать в базу данных', command = lambda: write_to_database(tonnage, price, total_length, write_to_database_entry.get()), state = 'disabled')
+write_to_database_button = Button(root, text = 'Записать в базу данных', command = lambda: write_to_database(tonnage, price, total_length, write_to_database_entry.get()), state = 'disabled')
 write_to_database_button.pack(pady = 10)
 
-get_from_database_label = ttk.Label(root, text = 'Введите ID записи для её просмотра')
+get_from_database_label = Label(root, text = 'Введите ID записи для её просмотра')
 get_from_database_label.pack(pady = 10)
 get_from_database_entry = ttk.Entry(root)
 get_from_database_entry.pack(pady = 10)
-get_from_database_button = ttk.Button(root, text = 'Посмотреть записанные данные', command = lambda: get_from_database(get_from_database_entry.get()))
+get_from_database_button = Button(root, text = 'Посмотреть записанные данные', command = lambda: get_from_database(get_from_database_entry.get()))
 get_from_database_button.pack(pady = 10)
 
-remove_from_database_label = ttk.Label(root, text = 'Введите ID записи для удаления')
+remove_from_database_label = Label(root, text = 'Введите ID записи для удаления')
 remove_from_database_label.pack(pady = 10)
 remove_from_database_entry = ttk.Entry(root)
 remove_from_database_entry.pack(pady = 10)
-remove_from_database_button = ttk.Button(root, text = 'Удалить из базы данных', command = lambda: remove_from_database(remove_from_database_entry.get()))
+remove_from_database_button = Button(root, text = 'Удалить из базы данных', command = lambda: remove_from_database(remove_from_database_entry.get()))
 remove_from_database_button.pack(pady = 10)
 
 root.mainloop()
