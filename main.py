@@ -397,12 +397,12 @@ def get_from_database(id):
     cur.execute("SELECT * FROM results WHERE id = %s", (id))
     result = cur.fetchone()
     try:
-        result_label.config(text = f'Название камеры: {result[1]}\n \
-                            Общий тоннаж астима: {result[2]} кг\n \
-                            Общая стоимость: {result[3]} руб\n \
-                            Общая длина: {result[4]} м\n \
-                            Гидротэк: {result[5]} кг\n \
-                            Тоннаж клея: {result[6]} кг', foreground = 'black')
+        result_label.config(text = f'Название камеры: {result[1]} \
+                            \nОбщий тоннаж астима: {result[2]} кг \
+                            \nОбщая стоимость: {result[3]} руб \
+                            \nОбщая длина: {result[4]} м \
+                            \nГидротэк: {result[5]} кг \
+                            \nТоннаж клея: {result[6]} кг', foreground = 'black')
     except Exception:
         result_label.config(text = 'Записи с данным ID не существует', foreground = 'red')
 
